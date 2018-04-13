@@ -29,8 +29,8 @@ require_once( ABSPATH . 'wp-admin/includes/class-wp-internal-pointers.php' );
  *                                     $selected_cats must not be an array. Default 0.
  * @param int    $descendants_and_self Optional. ID of the category to output along with its descendants.
  *                                     Default 0.
- * @param array  $selected_cats        Optional. List of categories to mark as checked. Default false.
- * @param array  $popular_cats         Optional. List of categories to receive the "popular-category" class.
+ * @param int[]  $selected_cats        Optional. Array of category IDs to mark as checked. Default false.
+ * @param int[]  $popular_cats         Optional. Array of category IDs to receive the "popular-category" class.
  *                                     Default false.
  * @param object $walker               Optional. Walker object to use to build the output.
  *                                     Default is a Walker_Category_Checklist instance.
@@ -64,8 +64,8 @@ function wp_category_checklist( $post_id = 0, $descendants_and_self = 0, $select
  *
  *     @type int    $descendants_and_self ID of the category to output along with its descendants.
  *                                        Default 0.
- *     @type array  $selected_cats        List of categories to mark as checked. Default false.
- *     @type array  $popular_cats         List of categories to receive the "popular-category" class.
+ *     @type int[]  $selected_cats        Array of category IDs to mark as checked. Default false.
+ *     @type int[]  $popular_cats         Array of category IDs to receive the "popular-category" class.
  *                                        Default false.
  *     @type object $walker               Walker object to use to build the output.
  *                                        Default is a Walker_Category_Checklist instance.
@@ -360,6 +360,16 @@ function get_inline_data( $post ) {
 	if ( post_type_supports( $post->post_type, 'post-formats' ) ) {
 		echo '<div class="post_format">' . esc_html( get_post_format( $post->ID ) ) . '</div>';
 	}
+
+	/**
+	 * Fires after outputting the fields for the inline editor for posts and pages.
+	 *
+	 * @since 5.0.0
+	 *
+	 * @param WP_Post      $post             The current post object.
+	 * @param WP_Post_Type $post_type_object The current post's post type object.
+	 */
+	do_action( 'add_inline_data', $post, $post_type_object );
 
 	echo '</div>';
 }
@@ -1887,8 +1897,8 @@ function _post_states( $post ) {
 	 * @since 2.8.0
 	 * @since 3.6.0 Added the `$post` parameter.
 	 *
-	 * @param array   $post_states An array of post display states.
-	 * @param WP_Post $post        The current post object.
+	 * @param string[] $post_states An array of post display states.
+	 * @param WP_Post  $post        The current post object.
 	 */
 	$post_states = apply_filters( 'display_post_states', $post_states, $post );
 
@@ -1963,9 +1973,9 @@ function _media_states( $post ) {
 	 * @since 3.2.0
 	 * @since 4.8.0 Added the `$post` parameter.
 	 *
-	 * @param array   $media_states An array of media states. Default 'Header Image',
-	 *                              'Background Image', 'Site Icon', 'Logo'.
-	 * @param WP_Post $post         The current attachment object.
+	 * @param string[] $media_states An array of media states. Default 'Header Image',
+	 *                               'Background Image', 'Site Icon', 'Logo'.
+	 * @param WP_Post  $post         The current attachment object.
 	 */
 	$media_states = apply_filters( 'display_media_states', $media_states, $post );
 
@@ -2192,7 +2202,7 @@ function convert_to_screen( $hook_name ) {
 		_doing_it_wrong(
 			'convert_to_screen(), add_meta_box()',
 			sprintf(
-				/* translators: 1: wp-admin/includes/template.php 2: add_meta_box() 3: add_meta_boxes */
+				/* translators: 1: wp-admin/includes/template.php, 2: add_meta_box(), 3: add_meta_boxes */
 				__( 'Likely direct inclusion of %1$s in order to use %2$s. This is very wrong. Hook the %2$s call into the %3$s action instead.' ),
 				'<code>wp-admin/includes/template.php</code>',
 				'<code>add_meta_box()</code>',
@@ -2275,11 +2285,11 @@ function wp_star_rating( $args = array() ) {
 	$empty_stars = 5 - $full_stars - $half_stars;
 
 	if ( $r['number'] ) {
-		/* translators: 1: The rating, 2: The number of ratings */
+		/* translators: 1: the rating, 2: the number of ratings */
 		$format = _n( '%1$s rating based on %2$s rating', '%1$s rating based on %2$s ratings', $r['number'] );
 		$title  = sprintf( $format, number_format_i18n( $rating, 1 ), number_format_i18n( $r['number'] ) );
 	} else {
-		/* translators: 1: The rating */
+		/* translators: %s: the rating */
 		$title = sprintf( __( '%s rating' ), number_format_i18n( $rating, 1 ) );
 	}
 

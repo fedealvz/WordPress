@@ -231,7 +231,7 @@ function number_format_i18n( $number, $decimals = 0 ) {
 	 * Filters the number formatted based on the locale.
 	 *
 	 * @since 2.8.0
-	 * @since 4.9.0 The `$number` and `$decimals` arguments were added.
+	 * @since 4.9.0 The `$number` and `$decimals` parameters were added.
 	 *
 	 * @param string $formatted Converted number in string format.
 	 * @param float  $number    The number to convert based on locale.
@@ -671,8 +671,12 @@ function wp_get_http_headers( $url, $deprecated = false ) {
 }
 
 /**
- * Whether the publish date of the current post in the loop is different from the
- * publish date of the previous post in the loop.
+ * Determines whether the publish date of the current post in the loop is different
+ * from the publish date of the previous post in the loop.
+ *
+ * For more information on this and similar theme functions, check out
+ * the {@link https://developer.wordpress.org/themes/basics/conditional-tags/
+ * Conditional Tags} article in the Theme Developer Handbook.
  *
  * @since 0.71
  *
@@ -1382,13 +1386,17 @@ function do_robots() {
 }
 
 /**
- * Test whether WordPress is already installed.
+ * Determines whether WordPress is already installed.
  *
  * The cache will be checked first. If you have a cache plugin, which saves
  * the cache values, then this will work. If you use the default WordPress
  * cache, and the database goes away, then you might have problems.
  *
  * Checks for the 'siteurl' option for whether WordPress is installed.
+ *
+ * For more information on this and similar theme functions, check out
+ * the {@link https://developer.wordpress.org/themes/basics/conditional-tags/
+ * Conditional Tags} article in the Theme Developer Handbook.
  *
  * @since 2.1.0
  *
@@ -1671,7 +1679,7 @@ function wp_mkdir_p( $target ) {
 
 	// We need to find the permissions of the parent folder that exists and inherit that.
 	$target_parent = dirname( $target );
-	while ( '.' != $target_parent && ! is_dir( $target_parent ) ) {
+	while ( '.' != $target_parent && ! is_dir( $target_parent ) && dirname( $target_parent ) !== $target_parent ) {
 		$target_parent = dirname( $target_parent );
 	}
 
@@ -2556,6 +2564,7 @@ function wp_get_mime_types() {
 			'dfxp'                         => 'application/ttaf+xml',
 			// Audio formats.
 			'mp3|m4a|m4b'                  => 'audio/mpeg',
+			'aac'                          => 'audio/aac',
 			'ra|ram'                       => 'audio/x-realaudio',
 			'wav'                          => 'audio/wav',
 			'ogg|oga'                      => 'audio/ogg',
@@ -2718,7 +2727,7 @@ function wp_nonce_ays( $action ) {
 			wp_logout_url( $redirect_to )
 		);
 	} else {
-		$html = __( 'Are you sure you want to do this?' );
+		$html = __( 'The link you followed has expired.' );
 		if ( wp_get_referer() ) {
 			$html .= '</p><p>';
 			$html .= sprintf(
@@ -2729,7 +2738,7 @@ function wp_nonce_ays( $action ) {
 		}
 	}
 
-	wp_die( $html, __( 'WordPress Failure Notice' ), 403 );
+	wp_die( $html, __( 'Something went wrong.' ), 403 );
 }
 
 /**
@@ -3712,7 +3721,7 @@ function wp_is_numeric_array( $data ) {
  * Filters a list of objects, based on a set of key => value arguments.
  *
  * @since 3.0.0
- * @since 4.7.0 Uses WP_List_Util class.
+ * @since 4.7.0 Uses `WP_List_Util` class.
  *
  * @param array       $list     An array of objects to filter
  * @param array       $args     Optional. An array of key => value arguments to match
@@ -3745,7 +3754,7 @@ function wp_filter_object_list( $list, $args = array(), $operator = 'and', $fiel
  * Filters a list of objects, based on a set of key => value arguments.
  *
  * @since 3.1.0
- * @since 4.7.0 Uses WP_List_Util class.
+ * @since 4.7.0 Uses `WP_List_Util` class.
  *
  * @param array  $list     An array of objects to filter.
  * @param array  $args     Optional. An array of key => value arguments to match
@@ -3773,7 +3782,7 @@ function wp_list_filter( $list, $args = array(), $operator = 'AND' ) {
  *
  * @since 3.1.0
  * @since 4.0.0 $index_key parameter added.
- * @since 4.7.0 Uses WP_List_Util class.
+ * @since 4.7.0 Uses `WP_List_Util` class.
  *
  * @param array      $list      List of objects or arrays
  * @param int|string $field     Field from the object to place instead of the entire object
@@ -4575,7 +4584,7 @@ function wp_suspend_cache_invalidation( $suspend = true ) {
  * Determine whether a site is the main site of the current network.
  *
  * @since 3.0.0
- * @since 4.9.0 The $network_id parameter has been added.
+ * @since 4.9.0 The `$network_id` parameter was added.
  *
  * @param int $site_id    Optional. Site ID to test. Defaults to current site.
  * @param int $network_id Optional. Network ID of the network to check for.
@@ -4715,6 +4724,38 @@ function global_terms_enabled() {
 		}
 	}
 	return $global_terms;
+}
+
+/**
+ * Determines whether site meta is enabled.
+ *
+ * This function checks whether the 'blogmeta' database table exists. The result is saved as
+ * a setting for the main network, making it essentially a global setting. Subsequent requests
+ * will refer to this setting instead of running the query.
+ *
+ * @since 5.0.0
+ *
+ * @global wpdb $wpdb WordPress database abstraction object.
+ *
+ * @return bool True if site meta is supported, false otherwise.
+ */
+function is_site_meta_supported() {
+	global $wpdb;
+
+	if ( ! is_multisite() ) {
+		return false;
+	}
+
+	$network_id = get_main_network_id();
+
+	$supported = get_network_option( $network_id, 'site_meta_supported', false );
+	if ( false === $supported ) {
+		$supported = $wpdb->get_var( "SHOW TABLES LIKE '{$wpdb->blogmeta}'" ) ? 1 : 0;
+
+		update_network_option( $network_id, 'site_meta_supported', $supported );
+	}
+
+	return (bool) $supported;
 }
 
 /**
@@ -5061,8 +5102,8 @@ function wp_scheduled_delete() {
  *
  * @since 2.9.0
  *
- * @param string $file            Path to the file.
- * @param array  $default_headers List of headers, in the format array('HeaderKey' => 'Header Name').
+ * @param string $file            Absolute path to the file.
+ * @param array  $default_headers List of headers, in the format `array('HeaderKey' => 'Header Name')`.
  * @param string $context         Optional. If specified adds filter hook {@see 'extra_$context_headers'}.
  *                                Default empty.
  * @return array Array of file headers in `HeaderKey => Header Value` format.
@@ -5357,6 +5398,8 @@ function wp_allowed_protocols() {
  *
  * @see https://core.trac.wordpress.org/ticket/19589
  *
+ * @staticvar array $truncate_paths Array of paths to truncate.
+ *
  * @param string $ignore_class Optional. A class to ignore all function calls within - useful
  *                             when you want to just give info about the callee. Default null.
  * @param int    $skip_frames  Optional. A number of stack frames to skip - useful for unwinding
@@ -5367,6 +5410,8 @@ function wp_allowed_protocols() {
  *                      of individual calls.
  */
 function wp_debug_backtrace_summary( $ignore_class = null, $skip_frames = 0, $pretty = true ) {
+	static $truncate_paths;
+
 	if ( version_compare( PHP_VERSION, '5.2.5', '>=' ) ) {
 		$trace = debug_backtrace( false );
 	} else {
@@ -5376,6 +5421,13 @@ function wp_debug_backtrace_summary( $ignore_class = null, $skip_frames = 0, $pr
 	$caller      = array();
 	$check_class = ! is_null( $ignore_class );
 	$skip_frames++; // skip this function
+
+	if ( ! isset( $truncate_paths ) ) {
+		$truncate_paths = array(
+			wp_normalize_path( WP_CONTENT_DIR ),
+			wp_normalize_path( ABSPATH )
+		);
+	}
 
 	foreach ( $trace as $call ) {
 		if ( $skip_frames > 0 ) {
@@ -5387,10 +5439,11 @@ function wp_debug_backtrace_summary( $ignore_class = null, $skip_frames = 0, $pr
 
 			$caller[] = "{$call['class']}{$call['type']}{$call['function']}";
 		} else {
-			if ( in_array( $call['function'], array( 'do_action', 'apply_filters' ) ) ) {
+			if ( in_array( $call['function'], array( 'do_action', 'apply_filters', 'do_action_ref_array', 'apply_filters_ref_array' ) ) ) {
 				$caller[] = "{$call['function']}('{$call['args'][0]}')";
 			} elseif ( in_array( $call['function'], array( 'include', 'include_once', 'require', 'require_once' ) ) ) {
-				$caller[] = $call['function'] . "('" . str_replace( array( WP_CONTENT_DIR, ABSPATH ), '', $call['args'][0] ) . "')";
+				$filename = isset( $call['args'][0] ) ? $call['args'][0] : '';
+				$caller[] = $call['function'] . "('" . str_replace( $truncate_paths, '', wp_normalize_path( $filename ) ) . "')";
 			} else {
 				$caller[] = $call['function'];
 			}
@@ -5404,15 +5457,14 @@ function wp_debug_backtrace_summary( $ignore_class = null, $skip_frames = 0, $pr
 }
 
 /**
- * Retrieve ids that are not already present in the cache.
+ * Retrieve IDs that are not already present in the cache.
  *
  * @since 3.4.0
  * @access private
  *
- * @param array  $object_ids ID list.
+ * @param int[]  $object_ids Array of IDs.
  * @param string $cache_key  The cache bucket to check against.
- *
- * @return array List of ids not present in the cache.
+ * @return int[] Array of IDs not present in the cache.
  */
 function _get_non_cached_ids( $object_ids, $cache_key ) {
 	$clean = array();
@@ -6074,4 +6126,122 @@ All at ###SITENAME###
 			$site_name
 		), $email_change_email['message'], $email_change_email['headers']
 	);
+}
+
+/**
+ * Return an anonymized IPv4 or IPv6 address.
+ *
+ * @since 5.0.0 Abstracted from `WP_Community_Events::get_unsafe_client_ip()`.
+ *
+ * @param  string $ip_addr        The IPv4 or IPv6 address to be anonymized.
+ * @param  bool   $ipv6_fallback  Optional. Whether to return the original IPv6 address if the needed functions
+ *                                to anonymize it are not present. Default false, return `::` (unspecified address).
+ * @return string  The anonymized IP address.
+ */
+function wp_privacy_anonymize_ip( $ip_addr, $ipv6_fallback = false ) {
+	// Detect what kind of IP address this is.
+	$ip_prefix = '';
+	$is_ipv6   = substr_count( $ip_addr, ':' ) > 1;
+	$is_ipv4   = ( 3 === substr_count( $ip_addr, '.' ) );
+
+	if ( $is_ipv6 && $is_ipv4 ) {
+		// IPv6 compatibility mode, temporarily strip the IPv6 part, and treat it like IPv4.
+		$ip_prefix = '::ffff:';
+		$ip_addr   = preg_replace( '/^\[?[0-9a-f:]*:/i', '', $ip_addr );
+		$ip_addr   = str_replace( ']', '', $ip_addr );
+		$is_ipv6   = false;
+	}
+
+	if ( $is_ipv6 ) {
+		// IPv6 addresses will always be enclosed in [] if there's a port.
+		$left_bracket  = strpos( $ip_addr, '[' );
+		$right_bracket = strpos( $ip_addr, ']' );
+		$percent       = strpos( $ip_addr, '%' );
+		$netmask       = 'ffff:ffff:ffff:ffff:0000:0000:0000:0000';
+
+		// Strip the port (and [] from IPv6 addresses), if they exist.
+		if ( false !== $left_bracket && false !== $right_bracket ) {
+			$ip_addr = substr( $ip_addr, $left_bracket + 1, $right_bracket - $left_bracket - 1 );
+		} elseif ( false !== $left_bracket || false !== $right_bracket ) {
+			// The IP has one bracket, but not both, so it's malformed.
+			return '::';
+		}
+
+		// Strip the reachability scope.
+		if ( false !== $percent ) {
+			$ip_addr = substr( $ip_addr, 0, $percent );
+		}
+
+		// No invalid characters should be left.
+		if ( preg_match( '/[^0-9a-f:]/i', $ip_addr ) ) {
+			return '::';
+		}
+
+		// Partially anonymize the IP by reducing it to the corresponding network ID.
+		if ( function_exists( 'inet_pton' ) && function_exists( 'inet_ntop' ) ) {
+			$ip_addr = inet_ntop( inet_pton( $ip_addr ) & inet_pton( $netmask ) );
+			if ( false === $ip_addr) {
+				return '::';
+			}
+		} elseif ( ! $ipv6_fallback ) {
+			return '::';
+		}
+	} elseif ( $is_ipv4 ) {
+		// Strip any port and partially anonymize the IP.
+		$last_octet_position = strrpos( $ip_addr, '.' );
+		$ip_addr             = substr( $ip_addr, 0, $last_octet_position ) . '.0';
+	} else {
+		return '0.0.0.0';
+	}
+
+	// Restore the IPv6 prefix to compatibility mode addresses.
+	return $ip_prefix . $ip_addr;
+}
+
+/**
+ * Return uniform "anonymous" data by type.
+ *
+ * @since 5.0.0
+ *
+ * @param  string $type The type of data to be anonymized.
+ * @param  string $data Optional The data to be anonymized.
+ * @return string The anonymous data for the requested type.
+ */
+function wp_privacy_anonymize_data( $type, $data = '' ) {
+
+	switch ( $type ) {
+		case 'email':
+			$anonymous = 'deleted@site.invalid';
+			break;
+		case 'url':
+			$anonymous = 'https://site.invalid';
+			break;
+		case 'ip':
+			$anonymous = wp_privacy_anonymize_ip( $data );
+			break;
+		case 'date':
+			$anonymous = '0000-00-00 00:00:00';
+			break;
+		case 'text':
+			/* translators: deleted text */
+			$anonymous = __( '[deleted]' );
+			break;
+		case 'longtext':
+			/* translators: deleted long text */
+			$anonymous = __( 'This content was deleted by the author.' );
+			break;
+		default:
+			$anonymous = '';
+	}
+
+	/**
+	 * Filters the anonymous data for each type.
+	 *
+	 * @since 5.0.0
+	 *
+	 * @param string $anonymous Anonymized data.
+	 * @param string $type      Type of the data.
+	 * @param string $data      Original data.
+	 */
+	return apply_filters( 'wp_privacy_anonymize_data', $anonymous, $type, $data );
 }

@@ -35,6 +35,13 @@ function wp_dashboard_setup() {
 		}
 	}
 
+	// PHP Version
+	$response = wp_check_php_version();
+	if ( $response && ! $response['is_acceptable'] && current_user_can( 'upgrade_php' ) ) {
+		$title = $response['is_secure'] ? __( 'Your site could be much faster!' ) : __( 'Your site could be much faster and more secure!' );
+		wp_add_dashboard_widget( 'dashboard_php_nag', $title, 'wp_dashboard_php_nag' );
+	}
+
 	// Right Now
 	if ( is_blog_admin() && current_user_can( 'edit_posts' ) ) {
 		wp_add_dashboard_widget( 'dashboard_right_now', __( 'At a Glance' ), 'wp_dashboard_right_now' );
@@ -72,7 +79,7 @@ function wp_dashboard_setup() {
 		 *
 		 * @since 3.1.0
 		 *
-		 * @param array $dashboard_widgets An array of dashboard widgets.
+		 * @param string[] $dashboard_widgets An array of dashboard widget IDs.
 		 */
 		$dashboard_widgets = apply_filters( 'wp_network_dashboard_widgets', array() );
 	} elseif ( is_user_admin() ) {
@@ -89,7 +96,7 @@ function wp_dashboard_setup() {
 		 *
 		 * @since 3.1.0
 		 *
-		 * @param array $dashboard_widgets An array of dashboard widgets.
+		 * @param string[] $dashboard_widgets An array of dashboard widget IDs.
 		 */
 		$dashboard_widgets = apply_filters( 'wp_user_dashboard_widgets', array() );
 	} else {
@@ -106,7 +113,7 @@ function wp_dashboard_setup() {
 		 *
 		 * @since 2.5.0
 		 *
-		 * @param array $dashboard_widgets An array of dashboard widgets.
+		 * @param string[] $dashboard_widgets An array of dashboard widget IDs.
 		 */
 		$dashboard_widgets = apply_filters( 'wp_dashboard_widgets', array() );
 	}
@@ -178,8 +185,10 @@ function wp_add_dashboard_widget( $widget_id, $widget_name, $callback, $control_
 		$location = 'side';
 	}
 
+	$high_priority_widgets = array( 'dashboard_browser_nag', 'dashboard_php_nag' );
+
 	$priority = 'core';
-	if ( 'dashboard_browser_nag' === $widget_id ) {
+	if ( in_array( $widget_id, $high_priority_widgets, true ) ) {
 		$priority = 'high';
 	}
 
@@ -305,7 +314,7 @@ function wp_dashboard_right_now() {
 	 *
 	 * @since 3.8.0
 	 *
-	 * @param array $items Array of extra 'At a Glance' widget items.
+	 * @param string[] $items Array of extra 'At a Glance' widget items.
 	 */
 	$elements = apply_filters( 'dashboard_glance_items', array() );
 
@@ -430,10 +439,8 @@ function wp_network_dashboard_right_now() {
 		 * just before the user and site search form fields.
 		 *
 		 * @since MU (3.0.0)
-		 *
-		 * @param null $unused
 		 */
-		do_action( 'wpmuadminresult', '' );
+		do_action( 'wpmuadminresult' );
 	?>
 
 	<form action="<?php echo network_admin_url( 'users.php' ); ?>" method="get">
@@ -546,7 +553,7 @@ function wp_dashboard_quick_press( $error_msg = false ) {
  *
  * @since 2.7.0
  *
- * @param array $drafts
+ * @param WP_Post[] $drafts Optional. Array of posts to display. Default false.
  */
 function wp_dashboard_recent_drafts( $drafts = false ) {
 	if ( ! $drafts ) {
@@ -662,7 +669,7 @@ function _wp_dashboard_recent_comments_row( &$comment, $show_date = true ) {
 		 *
 		 * @since 2.6.0
 		 *
-		 * @param array      $actions An array of comment actions. Default actions include:
+		 * @param string[]   $actions An array of comment actions. Default actions include:
 		 *                            'Approve', 'Unapprove', 'Edit', 'Reply', 'Spam',
 		 *                            'Delete', and 'Trash'.
 		 * @param WP_Comment $comment The comment object.
@@ -1305,7 +1312,7 @@ function wp_print_community_events_templates() {
 }
 
 /**
- * WordPress News dashboard widget.
+ * 'WordPress Events and News' dashboard widget.
  *
  * @since 2.7.0
  * @since 4.8.0 Removed popular plugins feed.
@@ -1315,7 +1322,7 @@ function wp_dashboard_primary() {
 		'news'   => array(
 
 			/**
-			 * Filters the primary link URL for the 'WordPress News' dashboard widget.
+			 * Filters the primary link URL for the 'WordPress Events and News' dashboard widget.
 			 *
 			 * @since 2.5.0
 			 *
@@ -1324,16 +1331,16 @@ function wp_dashboard_primary() {
 			'link'         => apply_filters( 'dashboard_primary_link', __( 'https://wordpress.org/news/' ) ),
 
 			/**
-			 * Filters the primary feed URL for the 'WordPress News' dashboard widget.
+			 * Filters the primary feed URL for the 'WordPress Events and News' dashboard widget.
 			 *
 			 * @since 2.3.0
 			 *
 			 * @param string $url The widget's primary feed URL.
 			 */
-			'url'          => apply_filters( 'dashboard_primary_feed', __( 'http://wordpress.org/news/feed/' ) ),
+			'url'          => apply_filters( 'dashboard_primary_feed', __( 'https://wordpress.org/news/feed/' ) ),
 
 			/**
-			 * Filters the primary link title for the 'WordPress News' dashboard widget.
+			 * Filters the primary link title for the 'WordPress Events and News' dashboard widget.
 			 *
 			 * @since 2.3.0
 			 *
@@ -1348,7 +1355,7 @@ function wp_dashboard_primary() {
 		'planet' => array(
 
 			/**
-			 * Filters the secondary link URL for the 'WordPress News' dashboard widget.
+			 * Filters the secondary link URL for the 'WordPress Events and News' dashboard widget.
 			 *
 			 * @since 2.3.0
 			 *
@@ -1357,7 +1364,7 @@ function wp_dashboard_primary() {
 			'link'         => apply_filters( 'dashboard_secondary_link', __( 'https://planet.wordpress.org/' ) ),
 
 			/**
-			 * Filters the secondary feed URL for the 'WordPress News' dashboard widget.
+			 * Filters the secondary feed URL for the 'WordPress Events and News' dashboard widget.
 			 *
 			 * @since 2.3.0
 			 *
@@ -1366,7 +1373,7 @@ function wp_dashboard_primary() {
 			'url'          => apply_filters( 'dashboard_secondary_feed', __( 'https://planet.wordpress.org/feed/' ) ),
 
 			/**
-			 * Filters the secondary link title for the 'WordPress News' dashboard widget.
+			 * Filters the secondary link title for the 'WordPress Events and News' dashboard widget.
 			 *
 			 * @since 2.3.0
 			 *
@@ -1375,7 +1382,7 @@ function wp_dashboard_primary() {
 			'title'        => apply_filters( 'dashboard_secondary_title', __( 'Other WordPress News' ) ),
 
 			/**
-			 * Filters the number of secondary link items for the 'WordPress News' dashboard widget.
+			 * Filters the number of secondary link items for the 'WordPress Events and News' dashboard widget.
 			 *
 			 * @since 4.4.0
 			 *
@@ -1392,7 +1399,7 @@ function wp_dashboard_primary() {
 }
 
 /**
- * Display the WordPress news feeds.
+ * Display the WordPress events and news feeds.
  *
  * @since 3.8.0
  * @since 4.8.0 Removed popular plugins feed.
@@ -1520,7 +1527,7 @@ function wp_dashboard_browser_nag() {
 	 * @since 3.2.0
 	 *
 	 * @param string $notice   The notice content.
-	 * @param array  $response An array containing web browser information.
+	 * @param array  $response An array containing web browser information. See `wp_check_browser_version()`.
 	 */
 	echo apply_filters( 'browse-happy-notice', $notice, $response );
 }
@@ -1594,6 +1601,88 @@ function wp_check_browser_version() {
 		}
 
 		set_site_transient( 'browser_' . $key, $response, WEEK_IN_SECONDS );
+	}
+
+	return $response;
+}
+
+/**
+ * Displays the PHP upgrade nag.
+ *
+ * @since 5.0.0
+ */
+function wp_dashboard_php_nag() {
+	$response = wp_check_php_version();
+
+	if ( ! $response ) {
+		return;
+	}
+
+	$information_url = _x( 'https://wordpress.org/support/upgrade-php/', 'localized PHP upgrade information page' );
+
+	if ( ! $response['is_secure'] ) {
+		$msg = __( 'WordPress has detected that your site is running on an insecure version of PHP, which is why we&#8217;re showing you this notice.' );
+	} else {
+		$msg = __( 'WordPress has detected that your site is running on an outdated version of PHP, which is why we&#8217;re showing you this notice.' );
+	}
+
+	?>
+	<p><?php echo $msg; ?></p>
+
+	<h3><?php _e( 'What is PHP and why should I care?' ); ?></h3>
+	<p><?php _e( 'PHP is the programming language that WordPress is built on. Newer versions of PHP are both faster and more secure, so upgrading is better for your site, and better for the people who are building WordPress.' ); ?></p>
+	<p><?php _e( 'If you want to know exactly how PHP works and why it is important, continue reading.' ); ?></p>
+
+	<h3><?php _e( 'How can I upgrade my PHP version?' ); ?></h3>
+	<p><?php _e( 'The button below will take you to a page with more details on what PHP is, how to upgrade your PHP version, and what to do if it turns out you can&#8217;t.' ); ?></p>
+	<p>
+		<a class="button button-primary button-hero" href="<?php echo esc_url( $information_url ); ?>"><?php _e( 'Show me how to upgrade my PHP' ); ?></a>
+	</p>
+
+	<p><?php _e( 'Upgrading usually takes only a few minutes and should be safe if you follow the provided instructions.' ); ?></p>
+	<?php
+}
+
+/**
+ * Checks if the user needs to upgrade PHP.
+ *
+ * @since 5.0.0
+ *
+ * @return array Array of PHP version data.
+ */
+function wp_check_php_version() {
+	$version = phpversion();
+	$key     = md5( $version );
+
+	$response = get_site_transient( 'php_check_' . $key );
+	if ( false === $response ) {
+		$url = 'http://api.wordpress.org/core/serve-happy/1.0/';
+		if ( wp_http_supports( array( 'ssl' ) ) ) {
+			$url = set_url_scheme( $url, 'https' );
+		}
+
+		$url = add_query_arg( 'php_version', $version, $url );
+
+		$response = wp_remote_get( $url );
+
+		if ( is_wp_error( $response ) || 200 != wp_remote_retrieve_response_code( $response ) ) {
+			return false;
+		}
+
+		/**
+		 * Response should be an array with:
+		 *  'recommended_version' - string - The PHP version recommended by WordPress
+		 *  'is_supported' - boolean - Whether the PHP version is actively supported
+		 *  'is_secure' - boolean - Whether the PHP version receives security updates
+		 *  'is_acceptable' - boolean - Whether the PHP version is still acceptable for WordPress
+		 */
+		$response = json_decode( wp_remote_retrieve_body( $response ), true );
+
+		if ( ! is_array( $response ) ) {
+			return false;
+		}
+
+		set_site_transient( 'php_check_' . $key, $response, WEEK_IN_SECONDS );
 	}
 
 	return $response;

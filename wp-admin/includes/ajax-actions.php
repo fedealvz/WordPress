@@ -37,20 +37,20 @@ function wp_ajax_nopriv_heartbeat() {
 		 *
 		 * @since 3.6.0
 		 *
-		 * @param array|object $response  The no-priv Heartbeat response object or array.
-		 * @param array        $data      An array of data passed via $_POST.
-		 * @param string       $screen_id The screen id.
+		 * @param array  $response  The no-priv Heartbeat response.
+		 * @param array  $data      The $_POST data sent.
+		 * @param string $screen_id The screen id.
 		 */
 		$response = apply_filters( 'heartbeat_nopriv_received', $response, $data, $screen_id );
 	}
 
 	/**
-	 * Filters Heartbeat Ajax response when no data is passed.
+	 * Filters Heartbeat Ajax response in no-privilege environments when no data is passed.
 	 *
 	 * @since 3.6.0
 	 *
-	 * @param array|object $response  The Heartbeat response object or array.
-	 * @param string       $screen_id The screen id.
+	 * @param array  $response  The no-priv Heartbeat response.
+	 * @param string $screen_id The screen id.
 	 */
 	$response = apply_filters( 'heartbeat_nopriv_send', $response, $screen_id );
 
@@ -61,8 +61,8 @@ function wp_ajax_nopriv_heartbeat() {
 	 *
 	 * @since 3.6.0
 	 *
-	 * @param array|object $response  The no-priv Heartbeat response.
-	 * @param string       $screen_id The screen id.
+	 * @param array  $response  The no-priv Heartbeat response.
+	 * @param string $screen_id The screen id.
 	 */
 	do_action( 'heartbeat_nopriv_tick', $response, $screen_id );
 
@@ -3025,6 +3025,15 @@ function wp_ajax_heartbeat() {
 	}
 
 	if ( 1 !== $nonce_state ) {
+		/**
+		 * Filters the nonces to send to the New/Edit Post screen.
+		 *
+		 * @since 4.3.0
+		 *
+		 * @param array  $response  The Heartbeat response.
+		 * @param array  $data      The $_POST data sent.
+		 * @param string $screen_id The screen id.
+		 */
 		$response = apply_filters( 'wp_refresh_nonces', $response, $data, $screen_id );
 
 		if ( false === $nonce_state ) {
@@ -3625,7 +3634,7 @@ function wp_ajax_save_wporg_username() {
  *
  * @see Theme_Upgrader
  *
- * @global WP_Filesystem_Base $wp_filesystem Subclass
+ * @global WP_Filesystem_Base $wp_filesystem WordPress filesystem subclass.
  */
 function wp_ajax_install_theme() {
 	check_ajax_referer( 'updates' );
@@ -3683,7 +3692,7 @@ function wp_ajax_install_theme() {
 		$status['errorCode']    = $skin->result->get_error_code();
 		$status['errorMessage'] = $skin->result->get_error_message();
 		wp_send_json_error( $status );
-	} elseif ( $skin->get_errors()->get_error_code() ) {
+	} elseif ( $skin->get_errors()->has_errors() ) {
 		$status['errorMessage'] = $skin->get_error_messages();
 		wp_send_json_error( $status );
 	} elseif ( is_null( $result ) ) {
@@ -3693,7 +3702,7 @@ function wp_ajax_install_theme() {
 		$status['errorMessage'] = __( 'Unable to connect to the filesystem. Please confirm your credentials.' );
 
 		// Pass through the error from WP_Filesystem if one was raised.
-		if ( $wp_filesystem instanceof WP_Filesystem_Base && is_wp_error( $wp_filesystem->errors ) && $wp_filesystem->errors->get_error_code() ) {
+		if ( $wp_filesystem instanceof WP_Filesystem_Base && is_wp_error( $wp_filesystem->errors ) && $wp_filesystem->errors->has_errors() ) {
 			$status['errorMessage'] = esc_html( $wp_filesystem->errors->get_error_message() );
 		}
 
@@ -3744,7 +3753,7 @@ function wp_ajax_install_theme() {
  *
  * @see Theme_Upgrader
  *
- * @global WP_Filesystem_Base $wp_filesystem Subclass
+ * @global WP_Filesystem_Base $wp_filesystem WordPress filesystem subclass.
  */
 function wp_ajax_update_theme() {
 	check_ajax_referer( 'updates' );
@@ -3796,7 +3805,7 @@ function wp_ajax_update_theme() {
 		$status['errorCode']    = $skin->result->get_error_code();
 		$status['errorMessage'] = $skin->result->get_error_message();
 		wp_send_json_error( $status );
-	} elseif ( $skin->get_errors()->get_error_code() ) {
+	} elseif ( $skin->get_errors()->has_errors() ) {
 		$status['errorMessage'] = $skin->get_error_messages();
 		wp_send_json_error( $status );
 	} elseif ( is_array( $result ) && ! empty( $result[ $stylesheet ] ) ) {
@@ -3820,7 +3829,7 @@ function wp_ajax_update_theme() {
 		$status['errorMessage'] = __( 'Unable to connect to the filesystem. Please confirm your credentials.' );
 
 		// Pass through the error from WP_Filesystem if one was raised.
-		if ( $wp_filesystem instanceof WP_Filesystem_Base && is_wp_error( $wp_filesystem->errors ) && $wp_filesystem->errors->get_error_code() ) {
+		if ( $wp_filesystem instanceof WP_Filesystem_Base && is_wp_error( $wp_filesystem->errors ) && $wp_filesystem->errors->has_errors() ) {
 			$status['errorMessage'] = esc_html( $wp_filesystem->errors->get_error_message() );
 		}
 
@@ -3839,7 +3848,7 @@ function wp_ajax_update_theme() {
  *
  * @see delete_theme()
  *
- * @global WP_Filesystem_Base $wp_filesystem Subclass
+ * @global WP_Filesystem_Base $wp_filesystem WordPress filesystem subclass.
  */
 function wp_ajax_delete_theme() {
 	check_ajax_referer( 'updates' );
@@ -3882,7 +3891,7 @@ function wp_ajax_delete_theme() {
 		$status['errorMessage'] = __( 'Unable to connect to the filesystem. Please confirm your credentials.' );
 
 		// Pass through the error from WP_Filesystem if one was raised.
-		if ( $wp_filesystem instanceof WP_Filesystem_Base && is_wp_error( $wp_filesystem->errors ) && $wp_filesystem->errors->get_error_code() ) {
+		if ( $wp_filesystem instanceof WP_Filesystem_Base && is_wp_error( $wp_filesystem->errors ) && $wp_filesystem->errors->has_errors() ) {
 			$status['errorMessage'] = esc_html( $wp_filesystem->errors->get_error_message() );
 		}
 
@@ -3911,7 +3920,7 @@ function wp_ajax_delete_theme() {
  *
  * @see Plugin_Upgrader
  *
- * @global WP_Filesystem_Base $wp_filesystem Subclass
+ * @global WP_Filesystem_Base $wp_filesystem WordPress filesystem subclass.
  */
 function wp_ajax_install_plugin() {
 	check_ajax_referer( 'updates' );
@@ -3971,7 +3980,7 @@ function wp_ajax_install_plugin() {
 		$status['errorCode']    = $skin->result->get_error_code();
 		$status['errorMessage'] = $skin->result->get_error_message();
 		wp_send_json_error( $status );
-	} elseif ( $skin->get_errors()->get_error_code() ) {
+	} elseif ( $skin->get_errors()->has_errors() ) {
 		$status['errorMessage'] = $skin->get_error_messages();
 		wp_send_json_error( $status );
 	} elseif ( is_null( $result ) ) {
@@ -3981,7 +3990,7 @@ function wp_ajax_install_plugin() {
 		$status['errorMessage'] = __( 'Unable to connect to the filesystem. Please confirm your credentials.' );
 
 		// Pass through the error from WP_Filesystem if one was raised.
-		if ( $wp_filesystem instanceof WP_Filesystem_Base && is_wp_error( $wp_filesystem->errors ) && $wp_filesystem->errors->get_error_code() ) {
+		if ( $wp_filesystem instanceof WP_Filesystem_Base && is_wp_error( $wp_filesystem->errors ) && $wp_filesystem->errors->has_errors() ) {
 			$status['errorMessage'] = esc_html( $wp_filesystem->errors->get_error_message() );
 		}
 
@@ -4018,7 +4027,7 @@ function wp_ajax_install_plugin() {
  *
  * @see Plugin_Upgrader
  *
- * @global WP_Filesystem_Base $wp_filesystem Subclass
+ * @global WP_Filesystem_Base $wp_filesystem WordPress filesystem subclass.
  */
 function wp_ajax_update_plugin() {
 	check_ajax_referer( 'updates' );
@@ -4072,7 +4081,7 @@ function wp_ajax_update_plugin() {
 		$status['errorCode']    = $skin->result->get_error_code();
 		$status['errorMessage'] = $skin->result->get_error_message();
 		wp_send_json_error( $status );
-	} elseif ( $skin->get_errors()->get_error_code() ) {
+	} elseif ( $skin->get_errors()->has_errors() ) {
 		$status['errorMessage'] = $skin->get_error_messages();
 		wp_send_json_error( $status );
 	} elseif ( is_array( $result ) && ! empty( $result[ $plugin ] ) ) {
@@ -4106,7 +4115,7 @@ function wp_ajax_update_plugin() {
 		$status['errorMessage'] = __( 'Unable to connect to the filesystem. Please confirm your credentials.' );
 
 		// Pass through the error from WP_Filesystem if one was raised.
-		if ( $wp_filesystem instanceof WP_Filesystem_Base && is_wp_error( $wp_filesystem->errors ) && $wp_filesystem->errors->get_error_code() ) {
+		if ( $wp_filesystem instanceof WP_Filesystem_Base && is_wp_error( $wp_filesystem->errors ) && $wp_filesystem->errors->has_errors() ) {
 			$status['errorMessage'] = esc_html( $wp_filesystem->errors->get_error_message() );
 		}
 
@@ -4125,7 +4134,7 @@ function wp_ajax_update_plugin() {
  *
  * @see delete_plugins()
  *
- * @global WP_Filesystem_Base $wp_filesystem Subclass
+ * @global WP_Filesystem_Base $wp_filesystem WordPress filesystem subclass.
  */
 function wp_ajax_delete_plugin() {
 	check_ajax_referer( 'updates' );
@@ -4173,7 +4182,7 @@ function wp_ajax_delete_plugin() {
 		$status['errorMessage'] = __( 'Unable to connect to the filesystem. Please confirm your credentials.' );
 
 		// Pass through the error from WP_Filesystem if one was raised.
-		if ( $wp_filesystem instanceof WP_Filesystem_Base && is_wp_error( $wp_filesystem->errors ) && $wp_filesystem->errors->get_error_code() ) {
+		if ( $wp_filesystem instanceof WP_Filesystem_Base && is_wp_error( $wp_filesystem->errors ) && $wp_filesystem->errors->has_errors() ) {
 			$status['errorMessage'] = esc_html( $wp_filesystem->errors->get_error_message() );
 		}
 
@@ -4316,4 +4325,121 @@ function wp_ajax_edit_theme_plugin_file() {
 			)
 		);
 	}
+}
+
+function wp_ajax_wp_privacy_export_personal_data() {
+//	check_ajax_referer( 'wp-privacy-export-personal-data', 'security' );
+
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_send_json_error( 'access denied' );
+	}
+
+	$email_address  = sanitize_text_field( $_POST['email'] );
+	$exporter_index = (int) $_POST['exporter'];
+	$page           = (int) $_POST['page'];
+
+	/**
+	 * Filters the array of exporter callbacks.
+	 *
+	 * @since 4.9.5.
+	 *
+	 * @param array $args {
+	 *     An array of callable exporters of personal data. Default empty array.
+	 *     [
+	 *         callback               string  Callable exporter that accepts an email address and
+	 *                                        a page and returns an array of name => value
+	 *                                        pairs of personal data
+	 *         exporter_friendly_name string  Translated user facing friendly name for the exporter
+	 *     ]
+	 * }
+	 */
+	$exporters = apply_filters( 'wp_privacy_personal_data_exporters', array() );
+
+	if ( ! is_array( $exporters ) ) {
+		wp_send_json_error( 'An exporter has improperly used the registration filter.' );
+	}
+
+	// Do we have any registered exporters?
+	if ( 0 < count( $exporters ) ) {
+		if ( $exporter_index < 1 ) {
+			wp_send_json_error( 'Exporter index cannot be negative.' );
+		}
+
+		if ( $exporter_index > count( $exporters ) ) {
+			wp_send_json_error( 'Exporter index out of range.' );
+		}
+
+		$index = $exporter_index - 1;
+
+		if ( $page < 1 ) {
+			wp_send_json_error( 'Page index cannot be less than one.' );
+		}
+
+		// Surprisingly, email addresses can contain mutli-byte characters now
+		$email_address = trim( mb_strtolower( $email_address ) );
+
+		if ( ! is_email( $email_address ) ) {
+			wp_send_json_error( 'A valid email address must be given.' );
+		}
+
+		$exporter = $exporters[ $index ];
+		if ( ! is_array( $exporter ) ) {
+			wp_send_json_error( "Expected an array describing the exporter at index {$exporter_index}." );
+		}
+		if ( ! array_key_exists( 'callback', $exporter ) ) {
+			wp_send_json_error( "Exporter array at index {$exporter_index} does not include a callback." );
+		}
+		if ( ! is_callable( $exporter['callback'] ) ) {
+			wp_send_json_error( "Exporter callback at index {$exporter_index} is not a valid callback." );
+		}
+		if ( ! array_key_exists( 'exporter_friendly_name', $exporter ) ) {
+			wp_send_json_error( "Exporter array at index {$exporter_index} does not include a friendly name." );
+		}
+
+		$callback = $exporters[ $index ]['callback'];
+		$exporter_friendly_name = $exporters[ $index ]['exporter_friendly_name'];
+
+		$response = call_user_func( $callback, $email_address, $page );
+		if ( is_wp_error( $response ) ) {
+			wp_send_json_error( $response );
+		}
+
+		if ( ! is_array( $response ) ) {
+			wp_send_json_error( "Expected response as an array from exporter: {$exporter_friendly_name}." );
+		}
+		if ( ! array_key_exists( 'data', $response ) ) {
+			wp_send_json_error( "Expected data in response array from exporter: {$exporter_friendly_name}." );
+		}
+		if ( ! is_array( $response['data'] ) ) {
+			wp_send_json_error( "Expected data array in response array from exporter: {$exporter_friendly_name}." );
+		}
+		if ( ! array_key_exists( 'done', $response ) ) {
+			wp_send_json_error( "Expected done (boolean) in response array from exporter: {$exporter_friendly_name}." );
+		}
+	} else {
+		// No exporters, so we're done
+		$response = array(
+			'data' => array(),
+			'done' => true,
+		);
+	}
+
+	/**
+	 * Filters a page of personal data exporter data. Used to build the export report.
+	 *
+	 * Allows the export response to be consumed by destinations in addition to Ajax.
+	 *
+	 * @since 4.9.5
+	 *
+	 * @param array  $response        The personal data for the given exporter and page.
+	 * @param int    $exporter_index  The index of the exporter that provided this data.
+	 * @param string $email_address   The email address associated with this personal data.
+	 * @param int    $page            The zero-based page for this response.
+	 */
+	$response = apply_filters( 'wp_privacy_personal_data_export_page', $response, $exporter_index, $email_address, $page );
+	if ( is_wp_error( $response ) ) {
+		wp_send_json_error( $response );
+	}
+
+	wp_send_json_success( $response );
 }

@@ -971,11 +971,12 @@ function _wp_kses_split_callback( $match ) {
 function wp_kses_split2( $string, $allowed_html, $allowed_protocols ) {
 	$string = wp_kses_stripslashes( $string );
 
+	// It matched a ">" character.
 	if ( substr( $string, 0, 1 ) != '<' ) {
 		return '&gt;';
 	}
-	// It matched a ">" character
 
+	// Allow HTML comments.
 	if ( '<!--' == substr( $string, 0, 4 ) ) {
 		$string = str_replace( array( '<!--', '-->' ), '', $string );
 		while ( $string != ( $newstring = wp_kses( $string, $allowed_html, $allowed_protocols ) ) ) {
@@ -990,12 +991,11 @@ function wp_kses_split2( $string, $allowed_html, $allowed_protocols ) {
 		$string = preg_replace( '/-$/', '', $string );
 		return "<!--{$string}-->";
 	}
-	// Allow HTML comments
 
+	// It's seriously malformed.
 	if ( ! preg_match( '%^<\s*(/\s*)?([a-zA-Z0-9-]+)([^>]*)>?$%', $string, $matches ) ) {
 		return '';
 	}
-	// It's seriously malformed
 
 	$slash    = trim( $matches[1] );
 	$elem     = $matches[2];
@@ -1005,15 +1005,15 @@ function wp_kses_split2( $string, $allowed_html, $allowed_protocols ) {
 		$allowed_html = wp_kses_allowed_html( $allowed_html );
 	}
 
+	// They are using a not allowed HTML element.
 	if ( ! isset( $allowed_html[ strtolower( $elem ) ] ) ) {
 		return '';
 	}
-	// They are using a not allowed HTML element
 
+	// No attributes are allowed for closing elements.
 	if ( $slash != '' ) {
 		return "</$elem>";
 	}
-	// No attributes are allowed for closing elements
 
 	return wp_kses_attr( $elem, $attrlist, $allowed_html, $allowed_protocols );
 }
@@ -1047,7 +1047,8 @@ function wp_kses_attr( $element, $attr, $allowed_html, $allowed_protocols ) {
 	}
 
 	// Are any attributes allowed at all for this element?
-	if ( ! isset( $allowed_html[ strtolower( $element ) ] ) || true === $allowed_html[ strtolower( $element ) ] || count( $allowed_html[ strtolower( $element ) ] ) == 0 ) {
+	$element_low = strtolower( $element );
+	if ( empty( $allowed_html[ $element_low ] ) || true === $allowed_html[ $element_low ] ) {
 		return "<$element$xhtml_slash>";
 	}
 
@@ -1963,6 +1964,7 @@ function safecss_filter_attr( $css, $deprecated = '' ) {
 	 * @since 2.8.1
 	 * @since 4.4.0 Added support for `min-height`, `max-height`, `min-width`, and `max-width`.
 	 * @since 4.6.0 Added support for `list-style-type`.
+	 * @since 5.0.0 Added support for `text-transform`.
 	 *
 	 * @param array $attr List of allowed CSS attributes.
 	 */
@@ -2005,9 +2007,10 @@ function safecss_filter_attr( $css, $deprecated = '' ) {
 			'font-weight',
 			'letter-spacing',
 			'line-height',
+			'text-align',
 			'text-decoration',
 			'text-indent',
-			'text-align',
+			'text-transform',
 
 			'height',
 			'min-height',

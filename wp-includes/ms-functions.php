@@ -76,12 +76,12 @@ function get_active_blog_for_user( $user_id ) {
 				}
 				$details = get_site( $blog_id );
 				if ( is_object( $details ) && $details->archived == 0 && $details->spam == 0 && $details->deleted == 0 ) {
-					$ret = $blog;
+					$ret = $details;
 					if ( get_user_meta( $user_id, 'primary_blog', true ) != $blog_id ) {
 						update_user_meta( $user_id, 'primary_blog', $blog_id );
 					}
 					if ( ! get_user_meta( $user_id, 'source_domain', true ) ) {
-						update_user_meta( $user_id, 'source_domain', $blog->domain );
+						update_user_meta( $user_id, 'source_domain', $details->domain );
 					}
 					break;
 				}
@@ -101,7 +101,7 @@ function get_active_blog_for_user( $user_id ) {
  * The count is cached and updated twice daily. This is not a live count.
  *
  * @since MU (3.0.0)
- * @since 4.8.0 The $network_id parameter has been added.
+ * @since 4.8.0 The `$network_id` parameter has been added.
  *
  * @param int|null $network_id ID of the network. Default is the current network.
  * @return int Number of active users on the network.
@@ -116,8 +116,8 @@ function get_user_count( $network_id = null ) {
  * The count is cached and updated twice daily. This is not a live count.
  *
  * @since MU (3.0.0)
- * @since 3.7.0 The $network_id parameter has been deprecated.
- * @since 4.8.0 The $network_id parameter is now being used.
+ * @since 3.7.0 The `$network_id` parameter has been deprecated.
+ * @since 4.8.0 The `$network_id` parameter is now being used.
  *
  * @param int|null $network_id ID of the network. Default is the current network.
  * @return int Number of active sites on the network.
@@ -497,8 +497,9 @@ function wpmu_validate_user_signup( $user_name, $user_email ) {
 
 	$limited_email_domains = get_site_option( 'limited_email_domains' );
 	if ( is_array( $limited_email_domains ) && ! empty( $limited_email_domains ) ) {
-		$emaildomain = substr( $user_email, 1 + strpos( $user_email, '@' ) );
-		if ( ! in_array( $emaildomain, $limited_email_domains ) ) {
+		$limited_email_domains = array_map( 'strtolower', $limited_email_domains );
+		$emaildomain = strtolower( substr( $user_email, 1 + strpos( $user_email, '@' ) ) );
+		if ( ! in_array( $emaildomain, $limited_email_domains, true ) ) {
 			$errors->add( 'user_email', __( 'Sorry, that email address is not allowed!' ) );
 		}
 	}
@@ -2161,7 +2162,8 @@ function upload_is_file_too_big( $upload ) {
 	}
 
 	if ( strlen( $upload['bits'] ) > ( KB_IN_BYTES * get_site_option( 'fileupload_maxk', 1500 ) ) ) {
-		return sprintf( __( 'This file is too big. Files must be less than %d KB in size.' ) . '<br />', get_site_option( 'fileupload_maxk', 1500 ) );
+		/* translators: %s: maximum allowed file size in kilobytes */
+		return sprintf( __( 'This file is too big. Files must be less than %s KB in size.' ) . '<br />', get_site_option( 'fileupload_maxk', 1500 ) );
 	}
 
 	return $upload;
@@ -2463,7 +2465,7 @@ function wp_schedule_update_network_counts() {
  * Update the network-wide counts for the current network.
  *
  * @since 3.1.0
- * @since 4.8.0 The $network_id parameter has been added.
+ * @since 4.8.0 The `$network_id` parameter has been added.
  *
  * @param int|null $network_id ID of the network. Default is the current network.
  */
@@ -2479,7 +2481,7 @@ function wp_update_network_counts( $network_id = null ) {
  * on a network when a site is created or its status is updated.
  *
  * @since 3.7.0
- * @since 4.8.0 The $network_id parameter has been added.
+ * @since 4.8.0 The `$network_id` parameter has been added.
  *
  * @param int|null $network_id ID of the network. Default is the current network.
  */
@@ -2510,7 +2512,7 @@ function wp_maybe_update_network_site_counts( $network_id = null ) {
  * on a network when a user is created or its status is updated.
  *
  * @since 3.7.0
- * @since 4.8.0 The $network_id parameter has been added.
+ * @since 4.8.0 The `$network_id` parameter has been added.
  *
  * @param int|null $network_id ID of the network. Default is the current network.
  */
@@ -2529,7 +2531,7 @@ function wp_maybe_update_network_user_counts( $network_id = null ) {
  * Update the network-wide site count.
  *
  * @since 3.7.0
- * @since 4.8.0 The $network_id parameter has been added.
+ * @since 4.8.0 The `$network_id` parameter has been added.
  *
  * @param int|null $network_id ID of the network. Default is the current network.
  */
@@ -2556,7 +2558,7 @@ function wp_update_network_site_counts( $network_id = null ) {
  * Update the network-wide user count.
  *
  * @since 3.7.0
- * @since 4.8.0 The $network_id parameter has been added.
+ * @since 4.8.0 The `$network_id` parameter has been added.
  *
  * @global wpdb $wpdb WordPress database abstraction object.
  *
@@ -2685,7 +2687,7 @@ function upload_size_limit_filter( $size ) {
  * Plugins can alter this criteria using the {@see 'wp_is_large_network'} filter.
  *
  * @since 3.3.0
- * @since 4.8.0 The $network_id parameter has been added.
+ * @since 4.8.0 The `$network_id` parameter has been added.
  *
  * @param string   $using      'sites or 'users'. Default is 'sites'.
  * @param int|null $network_id ID of the network. Default is the current network.
@@ -2703,7 +2705,7 @@ function wp_is_large_network( $using = 'sites', $network_id = null ) {
 		 * Filters whether the network is considered large.
 		 *
 		 * @since 3.3.0
-		 * @since 4.8.0 The $network_id parameter has been added.
+		 * @since 4.8.0 The `$network_id` parameter has been added.
 		 *
 		 * @param bool   $is_large_network Whether the network has more than 10000 users or sites.
 		 * @param string $component        The component to count. Accepts 'users', or 'sites'.

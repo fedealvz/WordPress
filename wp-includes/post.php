@@ -226,6 +226,38 @@ function create_initial_post_types() {
 		)
 	);
 
+	register_post_type(
+		'user_export_request', array(
+			'labels'           => array(
+				'name'          => __( 'Export Personal Data Requests' ),
+				'singular_name' => __( 'Export Personal Data Request' ),
+			),
+			'public'           => false,
+			'_builtin'         => true, /* internal use only. don't use this when registering your own post type. */
+			'hierarchical'     => false,
+			'rewrite'          => false,
+			'query_var'        => false,
+			'can_export'       => false,
+			'delete_with_user' => false,
+		)
+	);
+
+	register_post_type(
+		'user_remove_request', array(
+			'labels'           => array(
+				'name'          => __( 'Remove Personal Data Requests' ),
+				'singular_name' => __( 'Remove Personal Data Request' ),
+			),
+			'public'           => false,
+			'_builtin'         => true, /* internal use only. don't use this when registering your own post type. */
+			'hierarchical'     => false,
+			'rewrite'          => false,
+			'query_var'        => false,
+			'can_export'       => false,
+			'delete_with_user' => false,
+		)
+	);
+
 	register_post_status(
 		'publish', array(
 			'label'       => _x( 'Published', 'post status' ),
@@ -292,6 +324,42 @@ function create_initial_post_types() {
 	register_post_status(
 		'inherit', array(
 			'label'               => 'inherit',
+			'internal'            => true,
+			'_builtin'            => true, /* internal use only. */
+			'exclude_from_search' => false,
+		)
+	);
+
+	register_post_status(
+		'request-pending', array(
+			'label'               => _x( 'Pending', 'request status' ),
+			'internal'            => true,
+			'_builtin'            => true, /* internal use only. */
+			'exclude_from_search' => false,
+		)
+	);
+
+	register_post_status(
+		'request-confirmed', array(
+			'label'               => _x( 'Confirmed', 'request status' ),
+			'internal'            => true,
+			'_builtin'            => true, /* internal use only. */
+			'exclude_from_search' => false,
+		)
+	);
+
+	register_post_status(
+		'request-failed', array(
+			'label'               => _x( 'Failed', 'request status' ),
+			'internal'            => true,
+			'_builtin'            => true, /* internal use only. */
+			'exclude_from_search' => false,
+		)
+	);
+
+	register_post_status(
+		'request-completed', array(
+			'label'               => _x( 'Completed', 'request status' ),
 			'internal'            => true,
 			'_builtin'            => true, /* internal use only. */
 			'exclude_from_search' => false,
@@ -783,6 +851,22 @@ function get_page_statuses() {
 }
 
 /**
+ * Return statuses for privacy requests.
+ *
+ * @since 5.0.0
+ *
+ * @return array
+ */
+function _wp_privacy_statuses() {
+	return array(
+		'request-pending'   => __( 'Pending' ),      // Pending confirmation from user.
+		'request-confirmed' => __( 'Confirmed' ),    // User has confirmed the action.
+		'request-failed'    => __( 'Failed' ),       // User failed to confirm the action.
+		'request-completed' => __( 'Completed' ),    // Admin has handled the request.
+	);
+}
+
+/**
  * Register a post status. Do not use before init.
  *
  * A simple function for creating or modifying a post status based on the
@@ -971,7 +1055,11 @@ function is_post_type_hierarchical( $post_type ) {
 }
 
 /**
- * Check if a post type is registered.
+ * Determines whether a post type is registered.
+ *
+ * For more information on this and similar theme functions, check out
+ * the {@link https://developer.wordpress.org/themes/basics/conditional-tags/
+ * Conditional Tags} article in the Theme Developer Handbook.
  *
  * @since 3.0.0
  *
@@ -1004,7 +1092,7 @@ function get_post_type( $post = null ) {
  * Retrieves a post type object by name.
  *
  * @since 3.0.0
- * @since 4.6.0 Object returned is now an instance of WP_Post_Type.
+ * @since 4.6.0 Object returned is now an instance of `WP_Post_Type`.
  *
  * @global array $wp_post_types List of post types.
  *
@@ -1039,7 +1127,7 @@ function get_post_type_object( $post_type ) {
  * @param string       $operator Optional. The logical operation to perform. 'or' means only one
  *                               element from the array needs to match; 'and' means all elements
  *                               must match; 'not' means no elements may match. Default 'and'.
- * @return array A list of post type names or objects.
+ * @return string[]|WP_Post_Type[] An array of post type names or objects.
  */
 function get_post_types( $args = array(), $output = 'names', $operator = 'and' ) {
 	global $wp_post_types;
@@ -1067,8 +1155,8 @@ function get_post_types( $args = array(), $output = 'names', $operator = 'and' )
  * @since 3.0.0 The `show_ui` argument is now enforced on the new post screen.
  * @since 4.4.0 The `show_ui` argument is now enforced on the post type listing
  *              screen and post editing screen.
- * @since 4.6.0 Post type object returned is now an instance of WP_Post_Type.
- * @since 4.7.0 Introduced `show_in_rest`, 'rest_base' and 'rest_controller_class'
+ * @since 4.6.0 Post type object returned is now an instance of `WP_Post_Type`.
+ * @since 4.7.0 Introduced `show_in_rest`, `rest_base` and `rest_controller_class`
  *              arguments to register the post type in REST API.
  *
  * @global array $wp_post_types List of post types.
@@ -1214,7 +1302,7 @@ function register_post_type( $post_type, $args = array() ) {
 	 * Fires after a post type is registered.
 	 *
 	 * @since 3.3.0
-	 * @since 4.6.0 Converted the `$post_type` parameter to accept a WP_Post_Type object.
+	 * @since 4.6.0 Converted the `$post_type` parameter to accept a `WP_Post_Type` object.
 	 *
 	 * @param string       $post_type        Post type.
 	 * @param WP_Post_Type $post_type_object Arguments used to register the post type.
@@ -1443,7 +1531,7 @@ function _post_type_meta_capabilities( $capabilities = null ) {
  *              and `use_featured_image` labels.
  * @since 4.4.0 Added the `archives`, `insert_into_item`, `uploaded_to_this_item`, `filter_items_list`,
  *              `items_list_navigation`, and `items_list` labels.
- * @since 4.6.0 Converted the `$post_type` parameter to accept a WP_Post_Type object.
+ * @since 4.6.0 Converted the `$post_type` parameter to accept a `WP_Post_Type` object.
  * @since 4.7.0 Added the `view_items` and `attributes` labels.
  *
  * @access private
@@ -1712,7 +1800,7 @@ function set_post_type( $post_id = 0, $post_type = 'post' ) {
  *
  * @since 4.4.0
  * @since 4.5.0 Added the ability to pass a post type name in addition to object.
- * @since 4.6.0 Converted the `$post_type` parameter to accept a WP_Post_Type object.
+ * @since 4.6.0 Converted the `$post_type` parameter to accept a `WP_Post_Type` object.
  *
  * @param string|WP_Post_Type $post_type Post type name or object.
  * @return bool Whether the post type should be considered viewable.
@@ -1981,10 +2069,14 @@ function get_post_custom_values( $key = '', $post_id = 0 ) {
 }
 
 /**
- * Check if post is sticky.
+ * Determines whether a post is sticky.
  *
  * Sticky posts should remain at the top of The Loop. If the post ID is not
  * given, then The Loop ID for the current post will be used.
+ *
+ * For more information on this and similar theme functions, check out
+ * the {@link https://developer.wordpress.org/themes/basics/conditional-tags/
+ * Conditional Tags} article in the Theme Developer Handbook.
  *
  * @since 2.7.0
  *
@@ -4099,7 +4191,9 @@ function wp_set_post_tags( $post_id = 0, $tags = '', $append = false ) {
  *
  * @param int          $post_id  Optional. The Post ID. Does not default to the ID of the global $post.
  * @param string|array $tags     Optional. An array of terms to set for the post, or a string of terms
- *                               separated by commas. Default empty.
+ *                               separated by commas. Hierarchical taxonomies must always pass IDs rather
+ *                               than names so that children with the same names but different parents
+ *                               aren't confused. Default empty.
  * @param string       $taxonomy Optional. Taxonomy name. Default 'post_tag'.
  * @param bool         $append   Optional. If true, don't delete existing terms, just add on. If false,
  *                               replace the terms with the new terms. Default false.
@@ -4246,8 +4340,8 @@ function wp_transition_post_status( $new_status, $old_status, $post ) {
  * Add a URL to those already pinged.
  *
  * @since 1.5.0
- * @since 4.7.0 $post_id can be a WP_Post object.
- * @since 4.7.0 $uri can be an array of URIs.
+ * @since 4.7.0 `$post_id` can be a WP_Post object.
+ * @since 4.7.0 `$uri` can be an array of URIs.
  *
  * @global wpdb $wpdb WordPress database abstraction object.
  *
@@ -4328,10 +4422,10 @@ function get_enclosed( $post_id ) {
  *
  * @since 1.5.0
  *
- * @since 4.7.0 $post_id can be a WP_Post object.
+ * @since 4.7.0 `$post_id` can be a WP_Post object.
  *
  * @param int|WP_Post $post_id Post ID or object.
- * @return array
+ * @return bool|string[] Array of URLs already pinged for the given post, false if the post is not found.
  */
 function get_pung( $post_id ) {
 	$post = get_post( $post_id );
@@ -4347,7 +4441,7 @@ function get_pung( $post_id ) {
 	 *
 	 * @since 2.0.0
 	 *
-	 * @param array $pung Array of URLs already pinged for the given post.
+	 * @param string[] $pung Array of URLs already pinged for the given post.
 	 */
 	return apply_filters( 'get_pung', $pung );
 }
@@ -4356,7 +4450,7 @@ function get_pung( $post_id ) {
  * Retrieve URLs that need to be pinged.
  *
  * @since 1.5.0
- * @since 4.7.0 $post_id can be a WP_Post object.
+ * @since 4.7.0 `$post_id` can be a WP_Post object.
  *
  * @param int|WP_Post $post_id Post Object or ID
  * @return array
@@ -5043,7 +5137,11 @@ function get_pages( $args = array() ) {
 //
 
 /**
- * Check if the attachment URI is local one and is really an attachment.
+ * Determines whether an attachment URI is local and really an attachment.
+ *
+ * For more information on this and similar theme functions, check out
+ * the {@link https://developer.wordpress.org/themes/basics/conditional-tags/
+ * Conditional Tags} article in the Theme Developer Handbook.
  *
  * @since 2.0.0
  *
@@ -5518,7 +5616,11 @@ function wp_attachment_is( $type, $post = null ) {
 }
 
 /**
- * Checks if the attachment is an image.
+ * Determines whether an attachment is an image.
+ *
+ * For more information on this and similar theme functions, check out
+ * the {@link https://developer.wordpress.org/themes/basics/conditional-tags/
+ * Conditional Tags} article in the Theme Developer Handbook.
  *
  * @since 2.1.0
  * @since 4.2.0 Modified into wrapper for wp_attachment_is() and
